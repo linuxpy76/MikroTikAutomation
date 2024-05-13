@@ -5,9 +5,9 @@ import getpass
 
 # Define SSH parameters and command
 router_ip = input("Enter the IP address: ")
-command = input("Enter your command: ")
 username = input("Username: ")
 password = getpass.getpass(prompt="Password: ")
+command = input("Enter your command: ")
 
 # Create SSH client
 ssh_client = paramiko.SSHClient()
