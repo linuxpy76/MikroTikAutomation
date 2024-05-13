@@ -41,12 +41,6 @@ if args.command is None:
     # Prompt for Command
     command = input("Command to execute: ")
 
-# Define SSH parameters and command
-router_ip = input("Enter the IP address: ")
-username = input("Username: ")
-password = getpass.getpass(prompt="Password: ")
-command = input("Enter your command: ")
-
 # Create SSH client
 ssh_client = paramiko.SSHClient()
 ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
