@@ -1,5 +1,12 @@
 #!/usr/bin/python3
 
+# Script created by Kyle Ringler
+# GitHub: https://github.com/linuxpy76/MikroTikAutomation
+# License: GPL 3.0
+# Updated 2024.05.12
+
+# This script connects to a MikroTik router and creates a backup file. Optionally you can pull the backup to the local system.
+
 import paramiko
 import getpass
 import datetime
