@@ -3,7 +3,7 @@
 # Script created by Kyle Ringler
 # GitHub: https://github.com/linuxpy76/MikroTikAutomation
 # License: GPL 3.0
-# Updated 2024.05.12
+# Updated 2024.05.13
 
 # This script connects to a MikroTik router and creates a backup file. Optionally you can pull the backup to the local system.
 
@@ -41,16 +41,16 @@ delete_remote_file = args.delete
 # If arguments aren't supplied then ask user for input to define SSH parameters
 if args.router_ip is None:
     # Prompt for Router IP
-    router_ip = input("Enter the IP address: ")
+    router_ip = input("Enter the IP address: ").strip()
 if args.username is None:
     # Prompt for Username
-    username = input("Username: ")
+    username = input("Username: ").strip()
 if args.password is None:
     # Prompt for Password
-    password = getpass.getpass(prompt="Password: ")
+    password = getpass.getpass(prompt="Password: ").strip()
 if args.directory is None:
     # Prompt for Directory
-    directory = input("Enter the local backup directory: ")
+    directory = input("Enter the local backup directory: ").strip()
 
 # Define function to append endswitch to path if there isn't one
 def save_backslash_to_path(path):
@@ -59,8 +59,8 @@ def save_backslash_to_path(path):
         path += os.path.sep # Append a backslash to the path
     return path
 
-# Call function to append endswitch to path if it's defined
-if directory in globals():
+# Call function to append endswitch to directory path if it's defined and it's blank
+if "directory" in globals() and directory != "":
     directory = save_backslash_to_path(directory)
 
 # Create SSH client
@@ -75,15 +75,15 @@ try:
     # Get router identity
     identity_command = "/system/identity/print"
     stdin, stdout, stderr = ssh.exec_command(identity_command)
-    router_identity = stdout.read().decode('utf-8').strip().split()[1]
+    router_identity = stdout.read().decode("utf-8").strip().split()[1]
 
     # Get current date and time for backup file naming
     now = datetime.datetime.now()
-    backup_filename = f"{router_identity}_backup_{now.strftime('%Y-%m-%d-%H-%M-%S')}.backup"
+    backup_filename = f"{router_identity}_backup_{now.strftime("%Y-%m-%d-%H-%M-%S")}.backup"
     ext_filename = f"{backup_filename}.rsc"
 
     # Execute the command
-    command = f'/export file={backup_filename}'
+    command = f"/export file={backup_filename}"
     stdin, stdout, stderr = ssh.exec_command(command)
 
     # Wait for the command to complete
@@ -110,6 +110,7 @@ try:
 
         # Download the backup file to the local directory
         sftp_client.get(ext_filename, local_backup_path)
+        print(f"Backup copied to '{local_backup_path}'")
 
         # Remove the backup file from the router (optional)
         if delete_remote_file == True:
@@ -120,7 +121,7 @@ try:
         print("Local backup directory not provided. Skipping file transfer and deletion.")
  
     else:
-        print(f"An error occurred!")
+        print(f"An error occurred! Backup file not found!")
 
 except paramiko.AuthenticationException:
     print("Authentication failed. Please check your credentials.")
