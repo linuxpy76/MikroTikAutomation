@@ -10,12 +10,12 @@ username = input("Username: ")
 password = getpass.getpass(prompt="Password: ")
 
 # Create SSH client
-ssh_client = paramiko.SSHClient()
-ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+ssh = paramiko.SSHClient()
+ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
 try:
     # Connect to the router
-    ssh_client.connect(router_ip, username=username, password=password)
+    ssh.connect(router_ip, username=username, password=password)
     print("Connected to MikroTik router.")
 
     # Get current date and time for backup file naming
@@ -24,13 +24,13 @@ try:
 
     # Execute the command
     command = f'/export file={backup_filename}'
-    stdin, stdout, stderr = ssh_client.exec_command(command)
+    stdin, stdout, stderr = ssh.exec_command(command)
 
     # Wait for the command to complete
     stdout.channel.recv_exit_status()
     
     # Check if the backup file was created successfully
-    sftp_client = ssh_client.open_sftp()
+    sftp_client = ssh.open_sftp()
     remote_files = sftp_client.listdir()
     if f"{backup_filename}.rsc" in remote_files:
         file_size = sftp_client.stat(f"{backup_filename}.rsc").st_size
@@ -49,4 +49,4 @@ except Exception as ex:
     print(f"An error occurred: {ex}")
 finally:
     # Close the SSH connection
-    ssh_client.close()
+    ssh.close()
