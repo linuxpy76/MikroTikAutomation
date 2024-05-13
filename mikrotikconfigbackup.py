@@ -79,7 +79,7 @@ try:
 
     # Get current date and time for backup file naming
     now = datetime.datetime.now()
-    backup_filename = f"{router_identity}_backup_{now.strftime("%Y-%m-%d-%H-%M-%S")}.backup"
+    backup_filename = f"{router_identity}_backup_{now.strftime('%Y-%m-%d-%H-%M-%S')}.backup"
     ext_filename = f"{backup_filename}.rsc"
 
     # Execute the command
