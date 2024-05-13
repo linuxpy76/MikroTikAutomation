@@ -10,16 +10,17 @@ import os
 parser = argparse.ArgumentParser(description="Logs into MikroTik router and creates a config backup.")
 
 # Add arguments
-parser.add_argument("-r", "--router-ip", type=str, help="Remote IP address without CIDR notation or hostname. Ex. 192.168.10.1 or router.org.lan")
+parser.add_argument("-r", "--router-ip", type=str, help="Hostname or remote IP address without CIDR notation. \nEx. 192.168.10.1 or router.org.lan")
 parser.add_argument("-u", "--username", type=str, help="Username Ex. admin")
-parser.add_argument("-p", "--password", type=str, help="Enter your password.")
-parser.add_argument("-d", "--directory", type=str, help="Path to save config file. Ex. C:\\backup\\")
+parser.add_argument("-p", "--password", type=str, help="Enter your password. If you skip this option then you will be prompted for it. (hides the pass)")
+parser.add_argument("-d", "--directory", type=str, help="Path to save config file. If backup is not defined then the remote copy and delete operations will be skipped. \nEx. C:\\backup\\")
 parser.add_argument("--delete", action="store_true", help="Delete the remote backup file from the router. Default: False")
 
 # Parse the command-line arguments
 args = parser.parse_args()
-
 config = vars(args)
+# Output to test if arguments are being accepted
+print(config)
 
 # Assigning arguments to variables for SSH parameters
 # args values must be the later value and not the first one
@@ -29,9 +30,6 @@ username = args.username
 password = args.password
 directory = args.directory
 delete_remote_file = args.delete
-
-# Output to test if arguments are being accepted
-print(config)
 
 # If arguments aren't supplied then ask user for input to define SSH parameters
 if args.router_ip is None:
@@ -54,8 +52,9 @@ def save_backslash_to_path(path):
         path += os.path.sep # Append a backslash to the path
     return path
 
-# Call function to append endswitch to path
-directory = save_backslash_to_path(directory)
+# Call function to append endswitch to path if it's defined
+if directory in globals():
+    directory = save_backslash_to_path(directory)
 
 # Create SSH client
 ssh = paramiko.SSHClient()
@@ -86,13 +85,19 @@ try:
     # Check if the backup file was created successfully
     sftp_client = ssh.open_sftp()
     remote_files = sftp_client.listdir()
-    if ext_filename in remote_files and directory:
+
+    # Check that the file was created.
+    if ext_filename in remote_files:
         file_size = sftp_client.stat(ext_filename).st_size
         if file_size > 0:
             print(f"Backup completed successfully. Configuration saved as '{ext_filename}'.")
         else:
             print("Backup file size is 0. Backup may have failed.")
-        
+    else:
+        print("Backup file not found. Backup may have failed.")
+
+    # Backup file to local directory
+    if ext_filename in remote_files and directory:
         # Define local path for the backup file
         local_backup_path = directory + ext_filename
 
@@ -106,9 +111,9 @@ try:
     
     elif ext_filename in remote_files and not directory:
         print("Local backup directory not provided. Skipping file transfer and deletion.")
-
+ 
     else:
-        print("Backup file not found. Backup may have failed.")
+        print(f"An error occurred!")
 
 except paramiko.AuthenticationException:
     print("Authentication failed. Please check your credentials.")
