@@ -39,7 +39,7 @@ if args.password is None:
     password = getpass.getpass(prompt="Password: ").strip()
 if args.command is None:
     # Prompt for Command
-    command = input("Command to execute: ")
+    command = input("Command to execute: ").strip()
 
 # Create SSH client
 ssh_client = paramiko.SSHClient()
