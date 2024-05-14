@@ -121,7 +121,7 @@ try:
     sftp_client = ssh.open_sftp()
     remote_files = sftp_client.listdir()
 
-    # Check that the config file was created.
+    # Check that the config backup file was created
     if cfg_bak_filename in remote_files:
         cfg_bak_filesize = sftp_client.stat(cfg_bak_filename).st_size
         if cfg_bak_filesize > 0:
@@ -131,6 +131,7 @@ try:
     else:
         print("Config backup file not found. Backup may have failed.")
     
+    # Check that the system backup file was created
     if sys_bak_filename in remote_files:
         sys_bak_filesize = sftp_client.stat(sys_bak_filename).st_size
         if sys_bak_filesize > 0:
