@@ -3,7 +3,6 @@
 # Script created by Kyle Ringler
 # GitHub: https://github.com/linuxpy76/MikroTikAutomation
 # License: GPL 3.0
-# Updated 2024.05.13
 
 # This script connects to a MikroTik router and creates a backup file. Optionally you can pull the backup to the local system.
 
@@ -18,6 +17,7 @@ parser = argparse.ArgumentParser(description="Logs into MikroTik router and crea
 
 # Add arguments
 parser.add_argument("-r", "--router-ip", type=str, help="Hostname or remote IP address without CIDR notation. \nEx. 192.168.10.1 or router.org.lan")
+parser.add_argument("-P", "--port", type=int, help="Select the port to use. Default: 22")
 parser.add_argument("-u", "--username", type=str, help="Username Ex. admin")
 parser.add_argument("-p", "--password", type=str, help="Enter router password. If you skip this option then you will be prompted for it. (hides the pass)")
 parser.add_argument("-d", "--directory", type=str, help="Path to save config file. If backup is not defined then the remote copy and delete operations will be skipped. \nEx. C:\\backup\\")
@@ -34,6 +34,7 @@ print(config)
 # args values must be the later value and not the first one
 # Even though the argument above is router-ip this args value must be args.router_ip
 router_ip = args.router_ip
+port = args.port
 username = args.username
 password = args.password
 directory = args.directory
@@ -44,6 +45,9 @@ encryption_password = args.encryption_password
 if args.router_ip is None:
     # Prompt for Router IP
     router_ip = input("Enter the IP address: ").strip()
+if args.port is None:
+    # Prompt for SSH port number
+    port = int(input("Enter an SSH port number: "))
 if args.username is None:
     # Prompt for Username
     username = input("Username: ").strip()
@@ -58,15 +62,15 @@ if args.encryption_password is None:
     encryption_password = getpass.getpass(prompt="Encryption Password: ").strip()
 
 # Define function to append endswitch to path if there isn't one
-def save_backslash_to_path(path):
-    # Check if the directory path ends with a backslash
+def save_endswitch_to_path(path):
+    # Check if the directory path ends with a endswitch
     if not path.endswith(os.path.sep):
-        path += os.path.sep # Append a backslash to the path
+        path += os.path.sep # Append a endswitch to the path
     return path
 
 # Call function to append endswitch to directory path if it's defined and it's blank
 if "directory" in globals() and directory != "":
-    directory = save_backslash_to_path(directory)
+    directory = save_endswitch_to_path(directory)
 
 # Create SSH client
 ssh = paramiko.SSHClient()
@@ -74,7 +78,7 @@ ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
 try:
     # Connect to the router
-    ssh.connect(router_ip, username=username, password=password)
+    ssh.connect(router_ip, port=port, username=username, password=password)
     print("Connected to MikroTik router.")
 
     # Get router identity
