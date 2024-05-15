@@ -72,103 +72,119 @@ def save_endswitch_to_path(path):
 if "directory" in globals() and directory != "":
     directory = save_endswitch_to_path(directory)
 
-# Create SSH client
+# Create SSH and SFTP clients
 ssh = paramiko.SSHClient()
 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
+# Get current date and time for backup file naming
+now = datetime.datetime.now()
+
 try:
-    # Connect to the router
-    ssh.connect(router_ip, port=port, username=username, password=password)
-    print("Connected to MikroTik router.")
+    def connect_to_router(router_ip, port, username, password):
+        # Connect to the router
+        ssh.connect(router_ip, port=port, username=username, password=password)
+        print(f"Connected to {router_ip} MikroTik router.")
 
-    # Get router identity
-    identity_command = "/system/identity/print"
-    stdin, stdout, stderr = ssh.exec_command(identity_command)
-    router_identity = stdout.read().decode("utf-8").strip().split()[1]
+    def get_router_identity():
+        # Get router identity
+        global router_identity
+        identity_command = "/system/identity/print"
+        stdin, stdout, stderr = ssh.exec_command(identity_command)
+        router_identity = stdout.read().decode("utf-8").strip().split()[1]
+        # return router_identity
 
-    # Get current date and time for backup file naming
-    now = datetime.datetime.now()
-    cfg_bak_filename = f"{router_identity}_cfg_backup_{now.strftime('%Y-%m-%d-%H%M%S')}"
-    # cfg_bak_filename = f"{cfg_bak_filename}.rsc"
-    sys_bak_filename = f"{router_identity}_sys_backup_{now.strftime('%Y-%m-%d-%H%M%S')}"
-    # sys_bak_filename = f"{sys_bak_filename}.backup"
+    def name_files(router_identity):
+        global cfg_bak_filename
+        cfg_bak_filename = f"{router_identity}_cfg_backup_{now.strftime('%Y-%m-%d-%H%M%S')}"
+        cfg_bak_filename = f"{cfg_bak_filename}.rsc"
+        global sys_bak_filename
+        sys_bak_filename = f"{router_identity}_sys_backup_{now.strftime('%Y-%m-%d-%H%M%S')}"
+        sys_bak_filename = f"{sys_bak_filename}.backup"
+        # return cfg_bak_filename, sys_bak_filename
 
-    # Execute the config backup command
-    cfg_bak_cmd = f"/export file={cfg_bak_filename}"
-    stdin, stdout, stderr = ssh.exec_command(cfg_bak_cmd)
-    # Wait for the command to complete
-    stdout.channel.recv_exit_status()
-    
-    # Rename config backup for file checks
-    cfg_bak_filename = f"{cfg_bak_filename}.rsc"
-
-    # Execute the system backup command
-    if "encryption_password" in globals() and encryption_password != "":
-        print("System backup will be encrypted with aes-sha256 and provided password.")
-        sys_bak_cmd = f"/system backup save name={sys_bak_filename} password={encryption_password}"
-        stdin, stdout, stderr = ssh.exec_command(sys_bak_cmd)
+    def execute_backups():
+        # Execute the config backup command
+        cfg_bak_cmd = f"/export file={cfg_bak_filename}"
+        stdin, stdout, stderr = ssh.exec_command(cfg_bak_cmd)
         # Wait for the command to complete
         stdout.channel.recv_exit_status()
-        output = stdout.read().decode('utf-8')
-    else:
-        print("WARNING! System backup will not be encrypted. No password provided.")
-        sys_bak_cmd = f"/system backup save name={sys_bak_filename} dont-encrypt yes"
-        stdin, stdout, stderr = ssh.exec_command(sys_bak_cmd)
-        # Wait for the command to complete
-        stdout.channel.recv_exit_status()
-        output = stdout.read().decode('utf-8')
+        # Rename config backup variable for file checks
+        # global cfg_bak_filename
+        # cfg_bak_filename = f"{cfg_bak_filename}.rsc"
 
-    # Rename System backup for file checks
-    sys_bak_filename = f"{sys_bak_filename}.backup"
-
-    # Check if the backup file was created successfully
-    sftp_client = ssh.open_sftp()
-    remote_files = sftp_client.listdir()
-
-    # Check that the config backup file was created
-    if cfg_bak_filename in remote_files:
-        cfg_bak_filesize = sftp_client.stat(cfg_bak_filename).st_size
-        if cfg_bak_filesize > 0:
-            print(f"Config backup completed successfully. Configuration saved as '{cfg_bak_filename}'.")
+        # Execute the system backup command
+        if "encryption_password" in globals() and encryption_password != "":
+            print("System backup will be encrypted with aes-sha256 and provided password.")
+            sys_bak_cmd = f"/system backup save name={sys_bak_filename} password={encryption_password}"
+            stdin, stdout, stderr = ssh.exec_command(sys_bak_cmd)
+            # Wait for the command to complete
+            stdout.channel.recv_exit_status()
+            output = stdout.read().decode('utf-8')
         else:
-            print("Config backup file size is 0. Backup may have failed.")
-    else:
-        print("Config backup file not found. Backup may have failed.")
-    
-    # Check that the system backup file was created
-    if sys_bak_filename in remote_files:
-        sys_bak_filesize = sftp_client.stat(sys_bak_filename).st_size
-        if sys_bak_filesize > 0:
-            print(f"System backup completed successfully. Configuration saved as '{sys_bak_filename}'.")
+            print("WARNING! System backup will not be encrypted. No password provided.")
+            sys_bak_cmd = f"/system backup save name={sys_bak_filename} dont-encrypt yes"
+            stdin, stdout, stderr = ssh.exec_command(sys_bak_cmd)
+            # Wait for the command to complete
+            stdout.channel.recv_exit_status()
+            output = stdout.read().decode('utf-8')
+        # Rename System backup variable for file checks
+        # global sys_bak_filename
+        # sys_bak_filename = f"{sys_bak_filename}.backup"
+        # return output, cfg_bak_filename, sys_bak_filename
+
+    def verify_backup_creation(cfg_bak_filename, sys_bak_filename):
+        # Check if the backup file was created successfully
+        sftp_client = ssh.open_sftp()
+        global remote_files
+        remote_files = sftp_client.listdir()
+
+        # Check that the config backup file was created
+        if cfg_bak_filename in remote_files:
+            cfg_bak_filesize = sftp_client.stat(cfg_bak_filename).st_size
+            if cfg_bak_filesize > 0:
+                print(f"Config backup completed successfully. Configuration saved as '{cfg_bak_filename}'.")
+            else:
+                print("Config backup file size is 0. Backup may have failed.")
         else:
-            print("System backup file size is 0. Backup may have failed.")
-    else:
-        print("System backup file not found. Backup may have failed.")
-
-    # Backup files to local directory
-    if cfg_bak_filename in remote_files and directory:
-        # Define local path for the config backup file
-        cfg_bak_path = directory + cfg_bak_filename
-        sys_bak_path = directory + sys_bak_filename
-
-        # Download the backup file to the local directory
-        sftp_client.get(cfg_bak_filename, cfg_bak_path)
-        print(f"Config backup copied to '{cfg_bak_path}'")
-        sftp_client.get(sys_bak_filename, sys_bak_path)
-        print(f"System backup copied to '{sys_bak_path}'")
-
-        # Remove the backup file from the router (optional)
-        if delete_remote_file == True:
-            sftp_client.remove(cfg_bak_filename)
-            print(f"Config backup file '{cfg_bak_filename}' removed from the router.")
-            sftp_client.remove(sys_bak_filename)
-            print(f"System backup file '{sys_bak_filename}' removed from the router.")
+            print("Config backup file not found. Backup may have failed.")
     
-    elif cfg_bak_filename in remote_files and not directory:
-        print("Local backup directory not provided. Skipping file transfer and deletion.")
+        # Check that the system backup file was created
+        if sys_bak_filename in remote_files:
+            sys_bak_filesize = sftp_client.stat(sys_bak_filename).st_size
+            if sys_bak_filesize > 0:
+                print(f"System backup completed successfully. Configuration saved as '{sys_bak_filename}'.")
+            else:
+                print("System backup file size is 0. Backup may have failed.")
+        else:
+            print("System backup file not found. Backup may have failed.")
+        # return remote_files
+
+    def download_backups(cfg_bak_filename, sys_bak_filename, remote_files):
+        # Backup files to local directory
+        sftp_client = ssh.open_sftp()
+        if cfg_bak_filename in remote_files and directory:
+            # Define local path for the config backup file
+            cfg_bak_path = directory + cfg_bak_filename
+            sys_bak_path = directory + sys_bak_filename
+
+            # Download the backup file to the local directory
+            sftp_client.get(cfg_bak_filename, cfg_bak_path)
+            print(f"Config backup copied to '{cfg_bak_path}'")
+            sftp_client.get(sys_bak_filename, sys_bak_path)
+            print(f"System backup copied to '{sys_bak_path}'")
+
+            # Remove the backup file from the router (optional)
+            if delete_remote_file == True:
+                sftp_client.remove(cfg_bak_filename)
+                print(f"Config backup file '{cfg_bak_filename}' removed from the router.")
+                sftp_client.remove(sys_bak_filename)
+                print(f"System backup file '{sys_bak_filename}' removed from the router.")
+    
+        elif cfg_bak_filename in remote_files and not directory:
+            print("Local backup directory not provided. Skipping file transfer and deletion.")
  
-    else:
-        print(f"An error occurred! Backup file not found!")
+        else:
+            print(f"An error occurred! Backup file not found!")
 
 except paramiko.AuthenticationException:
     print("Authentication failed. Please check your credentials.")
@@ -176,6 +192,18 @@ except paramiko.SSHException as ssh_ex:
     print(f"Error occurred while connecting to the router: {ssh_ex}")
 except Exception as ex:
     print(f"An error occurred: {ex}")
-finally:
+# finally:
     # Close the SSH connection
+    # ssh.close()
+
+def main():
+    connect_to_router(router_ip, port, username, password)
+    get_router_identity()
+    name_files(router_identity)
+    execute_backups()
+    verify_backup_creation(cfg_bak_filename, sys_bak_filename)
+    download_backups(cfg_bak_filename, sys_bak_filename, remote_files)
     ssh.close()
+
+if __name__ == "__main__":
+    main()
