@@ -193,16 +193,21 @@ except paramiko.SSHException as ssh_ex:
 except Exception as ex:
     print(f"An error occurred: {ex}")
 # finally:
-    # Close the SSH connection
-    # ssh.close()
 
 def main():
+    # Connect to the router
     connect_to_router(router_ip, port, username, password)
+    # Fetch the router identity
     get_router_identity()
+    # Create backup file names
     name_files(router_identity)
+    # Create the backups
     execute_backups()
+    # Verify that the backup was created
     verify_backup_creation(cfg_bak_filename, sys_bak_filename)
+    # Download the backups using SFTP to local directory
     download_backups(cfg_bak_filename, sys_bak_filename, remote_files)
+    # Close the SSH connection
     ssh.close()
 
 if __name__ == "__main__":
