@@ -18,6 +18,7 @@ parser = argparse.ArgumentParser(description="Logs into MikroTik router and crea
 # Add arguments
 parser.add_argument("-r", "--router-ip", type=str, help="Hostname or remote IP address without CIDR notation. \nEx. 192.168.10.1 or router.org.lan")
 parser.add_argument("-P", "--port", type=int, help="Select the port to use. Default: 22")
+parser.add_argument("--list", type=str, help="Provide the path to a list. Ex. /home/user/Documents/list.txt")
 parser.add_argument("-u", "--username", type=str, help="Username Ex. admin")
 parser.add_argument("-p", "--password", type=str, help="Enter router password. If you skip this option then you will be prompted for it. (hides the pass)")
 parser.add_argument("-d", "--directory", type=str, help="Path to save config file. If backup is not defined then the remote copy and delete operations will be skipped. \nEx. C:\\backup\\")
@@ -35,6 +36,7 @@ print(config)
 # Even though the argument above is router-ip this args value must be args.router_ip
 router_ip = args.router_ip
 port = args.port
+list = args.list
 username = args.username
 password = args.password
 directory = args.directory
@@ -60,6 +62,15 @@ if args.directory is None:
 if args.encryption_password is None:
     # Prompt for Encryption Password
     encryption_password = getpass.getpass(prompt="Encryption Password: ").strip()
+
+# Get routes from file and compose a list
+with open(f"{list}", "r") as file:
+    # Read lines and strip for routers
+    router_ip_addresses = [line.strip() for line in file.readlines()]
+
+# Print routers
+print("Listing routers...")
+print(router_ip_addresses)
 
 # Define function to append endswitch to path if there isn't one
 def save_endswitch_to_path(path):
@@ -195,20 +206,22 @@ except Exception as ex:
 # finally:
 
 def main():
-    # Connect to the router
-    connect_to_router(router_ip, port, username, password)
-    # Fetch the router identity
-    get_router_identity()
-    # Create backup file names
-    name_files(router_identity)
-    # Create the backups
-    execute_backups()
-    # Verify that the backup was created
-    verify_backup_creation(cfg_bak_filename, sys_bak_filename)
-    # Download the backups using SFTP to local directory
-    download_backups(cfg_bak_filename, sys_bak_filename, remote_files)
-    # Close the SSH connection
-    ssh.close()
+    for router_ip in range(router_ip_addresses):
+        print(f"Starting process on {router_ip}...")
+        # Connect to the router
+        connect_to_router(router_ip, port, username, password)
+        # Fetch the router identity
+        get_router_identity()
+        # Create backup file names
+        name_files(router_identity)
+        # Create the backups
+        execute_backups()
+        # Verify that the backup was created
+        verify_backup_creation(cfg_bak_filename, sys_bak_filename)
+        # Download the backups using SFTP to local directory
+        download_backups(cfg_bak_filename, sys_bak_filename, remote_files)
+        # Close the SSH connection
+        ssh.close()
 
 if __name__ == "__main__":
     main()
