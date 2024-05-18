@@ -206,7 +206,7 @@ except Exception as ex:
 # finally:
 
 def main():
-    for router_ip in range(router_ip_addresses):
+    for router_ip in router_ip_addresses:
         print(f"Starting process on {router_ip}...")
         # Connect to the router
         connect_to_router(router_ip, port, username, password)
