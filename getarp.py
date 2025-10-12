@@ -7,9 +7,6 @@ import socket
 import sys
 import re
 
-ipv4_pattern = r"^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
-mac_pattern = r"^([0-9A-Fa-f]{2}([-:])){5}([0-9A-Fa-f]{2})$"
-
 # Argument parser setup
 parser = argparse.ArgumentParser(description="Logs into MikroTik router and runs a single command.")
 parser.add_argument("-r", "--router-ip", type=str, help="Router IP or hostname (e.g. 192.168.10.1)")
@@ -81,11 +78,14 @@ except Exception as e:
 finally:
     ssh_client.close()
 
-m = re.findall(rf"{ipv4_pattern}", output, flags=re.MULTILINE)
+pattern = r"(\d+\.\d+\.\d+\.\d+)(?:\s+(\w+:\w+:\w+:\w+:\w+:\w+)|\s+)(?:\s+(\S+)|\s+)(?:\s+([a-zA-Z]+)| )"
 
-if m:
-    print("yes")
-    arp_table = m
-    print(arp_table)
-else:
-    print("no")
+arp_table = re.findall(rf"{pattern}", output, flags=re.MULTILINE)
+
+print("-" * 25)
+for entry in arp_table:
+    print(f"Interface: {entry[2]}")
+    print(f"  IP: {entry[0]}")
+    print(f"  MAC: {entry[1]}")
+    print(f"  Status: {entry[3]}")
+    print("-" * 25)
