@@ -78,21 +78,3 @@ except Exception as e:
 finally:
     ssh_client.close()
 
-# This pattern doesn't match to all entries yet
-pattern = r"(\d+\.\d+\.\d+\.\d+)\s+(\w+:\w+:\w+:\w+:\w+:\w+)(?:\s+(\S+)|\s+)(?:\s+(\S+))\s+(\w+)\s+(\w+)(?:\s+$|$)"
-pattern = r"(\d+\.\d+\.\d+\.\d+)\s+(\w+:\w+:\w+:\w+:\w+:\w+)(?:\s+(\S+)|\s+)(?:\s+(\S+))\s+(\w+)\s+(\w+)(?:\s+)"
-
-m = re.findall(rf"{pattern}", output)
-print(len(m))
-if m:
-    dhcp_leases = m
-    print(m)
-    print("-" * 25)
-    for entry in dhcp_leases:
-        print(f"Server: {entry[3]}")
-        print(f"  IP: {entry[0]}")
-        print(f"  MAC: {entry[1]}")
-        print(f"  Hostname: {entry[2]}")
-        print(f"  Status: {entry[4]}")
-        print(f"  Last Seen: {entry[5]}")
-        print("-" * 25)
