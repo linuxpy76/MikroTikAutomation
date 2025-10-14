@@ -78,8 +78,7 @@ except Exception as e:
 finally:
     ssh_client.close()
 
-# This pattern doesn't match to all entries yet
-pattern = r"(\d+\.\d+\.\d+\.\d+)\s+(\w+:\w+:\w+:\w+:\w+:\w+)(?:\s+(\S+)|\s+)(?:\s+(\S+))\s+(\w+)\s+(\w+)(?:\s+$|$)"
+pattern = r"^\s*?\d+\s+(?:[XD]\s+|)(\d+\.\d+\.\d+\.\d+)\s+([0-9A-F:]{17})\s+(\S*)\s+(\S+)\s*?$"
 
 m = re.findall(rf"{pattern}", output, flags=re.MULTILINE)
 print(len(m))
@@ -91,7 +90,5 @@ if m:
         print(f"Server: {entry[3]}")
         print(f"  IP: {entry[0]}")
         print(f"  MAC: {entry[1]}")
-        print(f"  Hostname: {entry[2]}")
-        print(f"  Status: {entry[4]}")
-        print(f"  Last Seen: {entry[5]}")
+        print(f"  Hostname: {entry[2] or 'none'}")
         print("-" * 25)
