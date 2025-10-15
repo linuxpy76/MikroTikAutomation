@@ -78,9 +78,6 @@ except Exception as e:
 finally:
     ssh_client.close()
 
-with open("ip_addresses.txt", "w") as f:
-    f.write(output)
-
 pattern = r"^\s*?\d+\s+(?:[XD]\s+|)(\d+\.\d+\.\d+\.\d+/\d+)\s+(\d+\.\d+\.\d+\.\d+)\s+(\S+)\s*?$"
 
 m = re.findall(rf"{pattern}", output, flags=re.MULTILINE)
