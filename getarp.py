@@ -78,7 +78,7 @@ except Exception as e:
 finally:
     ssh_client.close()
 
-pattern = r"(\d+\.\d+\.\d+\.\d+)(?:\s+(\w+:\w+:\w+:\w+:\w+:\w+)|\s+)(?:\s+(\S+)|\s+)(?:\s+([a-zA-Z]+)| )"
+pattern = r"^\s*?\d+\s+(?:X|DC|D)\s+(\d+\.\d+\.\d+\.\d+)\s+(?:(\w+:\w+:\w+:\w+:\w+:\w+)|\s*?)\s+(\S+)\s+(\S*)\s*?$"
 
 m = re.findall(rf"{pattern}", output, flags=re.MULTILINE)
 
