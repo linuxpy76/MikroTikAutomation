@@ -18,7 +18,7 @@ args = parser.parse_args()
 router_ip = args.router_ip or input("Enter router IP: ").strip()
 username = args.username or input("Username: ").strip()
 password = args.password or getpass.getpass("Password: ").strip()
-command = "/ip/dhcp/lease/print"
+command = "/ip/address/print"
 
 # Pre-check: test TCP connectivity
 try:
@@ -78,17 +78,18 @@ except Exception as e:
 finally:
     ssh_client.close()
 
-pattern = r"^\s*?\d+\s+(?:[XD]\s+|)(\d+\.\d+\.\d+\.\d+)\s+([0-9A-F:]{17})\s+(\S*)\s+(\S+)\s*?$"
+with open("ip_addresses.txt", "w") as f:
+    f.write(output)
+
+pattern = r"^\s*?\d+\s+(?:[XD]\s+|)(\d+\.\d+\.\d+\.\d+/\d+)\s+(\d+\.\d+\.\d+\.\d+)\s+(\S+)\s*?$"
 
 m = re.findall(rf"{pattern}", output, flags=re.MULTILINE)
 
 if m:
-    dhcp_leases = m
-    print(m)
+    address_table = m
     print("-" * 25)
-    for entry in dhcp_leases:
-        print(f"Server: {entry[3]}")
+    for entry in address_table:
+        print(f"Interface: {entry[2]}")
         print(f"  IP: {entry[0]}")
-        print(f"  MAC: {entry[1]}")
-        print(f"  Hostname: {entry[2] or 'none'}")
+        print(f"  Network: {entry[1]}")
         print("-" * 25)
